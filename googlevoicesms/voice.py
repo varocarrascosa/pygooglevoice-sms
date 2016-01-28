@@ -1,6 +1,7 @@
 from .util import *
 from . import settings
 import os
+import sys
 
 if settings.DEBUG:
     import logging
@@ -73,7 +74,8 @@ class Voice(object):
         try:
             assert self.special
         except (AssertionError, AttributeError):
-            raise LoginError
+            sys.stdout.write("Login error. Please check email and password\n")
+            sys.exit(0)
 
         return self
         
@@ -86,43 +88,6 @@ class Voice(object):
         assert self.special == None
         return self
         
-    def call(self, outgoingNumber, forwardingNumber=None, phoneType=None, subscriberNumber=None):
-        """
-        Make a call to an ``outgoingNumber`` from your ``forwardingNumber`` (optional).
-        If you pass in your ``forwardingNumber``, please also pass in the correct ``phoneType``
-        """        
-        if forwardingNumber is None:
-            forwardingNumber = config.forwardingNumber
-        if phoneType is None:
-            phoneType = config.phoneType
-            
-        self.__validate_special_page('call', {
-            'outgoingNumber': outgoingNumber,
-            'forwardingNumber': forwardingNumber,
-            'subscriberNumber': subscriberNumber or 'undefined',
-            'phoneType': phoneType,
-            'remember': '1'
-        })
-        
-    __call__ = call
-    
-    def cancel(self, outgoingNumber=None, forwardingNumber=None):
-        """
-        Cancels a call matching outgoing and forwarding numbers (if given). 
-        Will raise an error if no matching call is being placed
-        """
-        self.__validate_special_page('cancel', {
-            'outgoingNumber': outgoingNumber or 'undefined',
-            'forwardingNumber': forwardingNumber or 'undefined',
-            'cancelType': 'C2C',
-        })
-
-    def phones(self):
-        """
-        Returns a list of ``Phone`` instances attached to your account.
-        """
-        return [Phone(self, data) for data in list(self.contacts['phones'].values())]
-    phones = property(phones)
 
     def settings(self):
         """
@@ -130,6 +95,7 @@ class Voice(object):
         """
         return AttrDict(self.contacts['settings'])
     settings = property(settings)
+
     
     def send_sms(self, phoneNumber, text):
         """
@@ -137,47 +103,6 @@ class Voice(object):
         """
         self.__validate_special_page('sms', {'phoneNumber': phoneNumber, 'text': text})
 
-    def search(self, query):
-        """
-        Search your Google Voice Account history for calls, voicemails, and sms
-        Returns ``Folder`` instance containting matching messages
-        """
-        return self.__get_xml_page('search', data='?q=%s' % quote(query))()
-        
-    def download(self, msg, adir=None):
-        """
-        Download a voicemail or recorded call MP3 matching the given ``msg``
-        which can either be a ``Message`` instance, or a SHA1 identifier. 
-        Saves files to ``adir`` (defaults to current directory). 
-        Message hashes can be found in ``self.voicemail().messages`` for example. 
-        Returns location of saved file.
-        """
-        from os import path,getcwd
-        if isinstance(msg, Message):
-            msg = msg.id
-        assert is_sha1(msg), 'Message id not a SHA1 hash'
-        if adir is None:
-            adir = getcwd()
-        try:
-            response = self.__do_page('download', msg)
-        except:
-            raise DownloadError
-        fn = path.join(adir, '%s.mp3' % msg)
-        fo = open(fn, 'wb')
-        fo.write(response.read())
-        fo.close()
-        return fn
-    
-    def contacts(self):
-        """
-        Partial data of your Google Account Contacts related to your Voice account.
-        For a more comprehensive suite of APIs, check out http://code.google.com/apis/contacts/docs/1.0/developers_guide_python.html
-        """
-        if hasattr(self, '_contacts'):
-            return self._contacts
-        self._contacts = self.__get_xml_page('contacts')()
-        return self._contacts
-    contacts = property(contacts)
 
     ######################
     # Helper methods
