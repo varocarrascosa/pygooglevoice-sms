@@ -1,6 +1,5 @@
-from conf import config
-from util import *
-import settings
+from .util import *
+from . import settings
 import os
 
 if settings.DEBUG:
@@ -66,7 +65,7 @@ class Voice(object):
 
         content = self.__do_page('login').read()
         # holy hackjob
-        galx = re.search(b'name="GALX"\s*type="hidden"\n\s*value="([^"]+)"', content).group(1)
+        galx = re.search(b'name="GALX"\s*value="([^"]+)"', content).group(1)
         self.__do_page('login', {'Email': email, 'Passwd': passwd, 'GALX': galx})
         
         del email, passwd
