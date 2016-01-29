@@ -6,5 +6,5 @@ setup(name='pygooglevoice-sms',
       url='https://github.com/w1ll1am23/pygooglevoice-sms',
       author='William Scanlon',
       license='new BSD',
-      packages=['pygooglevoice-sms'],
+      packages=['googlevoicesms'],
       zip_safe=True)
